@@ -13,6 +13,7 @@ let pontuacao = 0;
 let perguntaAtual = 0;
 let respostaCorreta = null;
 let jogoAtivo = true;
+let perguntaCorrente = null;
 
 let premios = [
   {
@@ -194,25 +195,56 @@ let perguntas = [
   }
 ];
 
-function exibirPergunta() {
-  perguntaElemento.textContent = perguntas[perguntaAtual].pergunta;
-  opcoesElemento.forEach((opcao, index) => {
-    const numero = opcao.querySelector('.opcoes-generica-numero');
-    const texto = opcao.querySelector('.opcoes-generica-escrita');
-    numero.textContent = index + 1;
-    texto.textContent = perguntas[perguntaAtual].opcoes[index];
-  });
+let perguntasUtilizadas = [];
+
+function obterPerguntaAleatoria() {
+  let perguntaAleatoria;
+
+  if (perguntasUtilizadas.length === perguntas.length) {
+    return null;
+  }
+
+  do {
+    const indicePergunta = Math.floor(Math.random() * perguntas.length);
+    perguntaAleatoria = perguntas[indicePergunta];
+  } while (perguntasUtilizadas.includes(perguntaAleatoria));
+
+  perguntasUtilizadas.push(perguntaAleatoria);
+
+  return perguntaAleatoria;
 }
+
+function exibirPergunta() {
+  if (!perguntaCorrente) {
+    perguntaCorrente = obterPerguntaAleatoria();
+  }
+
+  if (perguntaCorrente) {
+    perguntaElemento.textContent = perguntaCorrente.pergunta;
+    opcoesElemento.forEach((opcao, index) => {
+      const numero = opcao.querySelector('.opcoes-generica-numero');
+      const texto = opcao.querySelector('.opcoes-generica-escrita');
+      numero.textContent = index + 1;
+      texto.textContent = perguntaCorrente.opcoes[index];
+    });
+  } else {
+    perguntaElemento.textContent = "Você já respondeu todas as perguntas!";
+  }
+}
+
 
 opcoesElemento.forEach((opcao, index) => {
   opcao.addEventListener('click', () => {
-    if (index === perguntas[perguntaAtual].resposta) {
-      atualizarPremios()
-      modalCertaElemento.style.display = 'flex';
-      
+    if (perguntaCorrente) {
+      if (index === perguntaCorrente.resposta) {
+        atualizarPremios();
+        modalCertaElemento.style.display = 'flex';
+      } else {
+        modalErradaElemento.style.display = 'flex';
+      }
+      perguntaCorrente = null;
     } else {
-      atualizarPremios()
-      modalErradaElemento.style.display = 'flex';
+      console.log('Todas as perguntas já foram utilizadas.');
     }
   });
 });
@@ -243,6 +275,7 @@ function atualizarPremios() {
   }
 }
 
+//parar
 stopElemento.addEventListener('click', () => {
   modalParabensElemento.style.display = 'flex';
   const premioFinalElemento = document.querySelector('#modalParabens p:nth-of-type(2)');
